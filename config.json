@@ -1,4 +1,7 @@
 {
+    "username" : "GMAIL_USERNAME",
+    "password" : "GMAIL_PASSWORD",
+    "mail_to" : "E-MAIL OF RECEIVER",
     "dl_abs_script_path": "/home/aleks/network-tester/downloader.py",
     "time_variance": 0,
     "intervals": [

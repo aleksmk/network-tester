@@ -5,6 +5,7 @@ import json
 import signal
 import md5
 import sys
+import smtplib
 
 config = json.loads(open('config.json', 'r').read())
 
@@ -64,13 +65,41 @@ def calculate_todays_variance():
     signed_sum = sign * todays_sum
     return signed_sum % (config['time_variance']) if config['time_variance'] else 0
 
+def send_mail(times_downloader_called):
+    to = config['mail_to']
+    mail_user = config['username']
+    mail_pass = config['password']
+    
+    smtpserver = smtplib.SMTP("smtp.gmail.com", 587)
+
+    smtpserver.ehlo()
+    smtpserver.starttls()
+    smtpserver.ehlo()
+    smtpserver.login(mail_user, mail_pass)
+    header = 'To:' + to + '\n' + 'From: ' + mail_user + '\n' + 'Subject: Daily downloader status\n' + 'Content-Type: text/plain; charset=UTF-8'
+    msg = header + '\n\nNumber of times started : %d' % times_downloader_called
+    smtpserver.sendmail(mail_user, to, msg)
+    print 'Mail sent !'
+    smtpserver.close()
+
+
 dl = Downloader()
 intervals = config['intervals']
 
 signal.signal(signal.SIGINT, kill_downloader_and_exit)
 signal.signal(signal.SIGTERM, kill_downloader_and_exit)
 
+daily_usage = 0;
+
 while True:
+    if d.datetime.now().hour == 0 and d.datetime.now().minute == 0:
+        try:
+            send_mail(daily_usage)
+            daily_usage = 0
+        except:
+            print 'ERROR While sending e-mail'
+            pass
+
     if dl.started():
         if not time_in_any_interval(d.datetime.now(), intervals):
             dl.stop()
@@ -78,5 +107,6 @@ while True:
     else:
         if time_in_any_interval(d.datetime.now(), intervals):
             dl.start()
+            daily_usage = daily_usage + 1
             print d.datetime.now(), 'started downloader'
-    sleep(60)
+    sleep(50)
